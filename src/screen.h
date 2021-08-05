@@ -1,30 +1,31 @@
 #include "defines.h"
-#include "heltec.h"
-#include "images.h"
 #include "measurements.h"
+#include "oled/SSD1306Wire.h"
 
-void logo() {
-  Heltec.display->clear();
-  Heltec.display->drawXbm(0, 5, logo_width, logo_height, logo_bits);
-  Heltec.display->display();
+SSD1306Wire *display;
+
+/* boarInit() replaces Heltec.h and allows for finer grained control
+ */
+void displayInit() {
+  display =
+      new SSD1306Wire(0x3c, SDA_OLED, SCL_OLED, RST_OLED, GEOMETRY_128_64);
+  display->init();
+  display->flipScreenVertically();
+  display->setFont(ArialMT_Plain_10);
+  display->display();
 }
 
 void screenInit() {
-  Heltec.display->init();
-  Heltec.display->flipScreenVertically();
-  Heltec.display->setFont(ArialMT_Plain_10);
-  logo();
-  delay(1500);
-  Heltec.display->clear();
-  Heltec.display->drawString(0, 0, "Heltec.LoRa Initialized successfuly!");
-  Heltec.display->display();
+  display->init();
+  display->flipScreenVertically();
+  display->setFont(ArialMT_Plain_10);
+  display->display();
 }
 
 void displayMeasurements(measurements M) {
-  Heltec.display->clear();
-  Heltec.display->drawString(0, 0,
-                             String("Temperature: " + String(M.temperature)));
-  Heltec.display->drawString(0, 12, "Humidity: " + String(M.humidity));
-  Heltec.display->drawString(0, 24, "Pressure: " + String(M.pressure));
-  Heltec.display->display();
+  display->clear();
+  display->drawString(0, 0, String("Temperature: " + String(M.temperature)));
+  display->drawString(0, 12, "Humidity: " + String(M.humidity));
+  display->drawString(0, 24, "Pressure: " + String(M.pressure));
+  display->display();
 }
