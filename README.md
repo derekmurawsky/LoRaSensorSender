@@ -10,6 +10,7 @@ Eventually I want to extend this project to support different sensors including 
 
 * [ ] Get rid of sleep timer and use a different model
 * [X] Pull LoRa functionality out of Heltec library for better power management
+* [X] Pull display functionality out of Heltec library for better power management
 * [ ] Clean up the codebase and figure out better ways of handling the objects and files. (I'm new to cpp as well...)
 * [X] Wake on button press to send data and display current data on the screen
 * [ ] Support an ambient light sensor with the same codebase. Can this be made pluggable?
