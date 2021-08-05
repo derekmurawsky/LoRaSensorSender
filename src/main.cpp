@@ -2,7 +2,6 @@
 #include "Adafruit_Sensor.h"
 #include "ArduinoJson.h"
 #include "Preferences.h"
-#include "WiFi.h"
 #include "Wire.h"
 #include "deepsleep.h"
 #include "defines.h"
@@ -10,13 +9,11 @@
 #include "lorahelpers.h"
 #include "screen.h"
 
-String rssi = "RSSI --";
-String packSize = "--";
-String packet;
 Preferences preferences;
 String sensorID;
 Adafruit_BME280 bme;
 RTC_DATA_ATTR int bootCount = 0;
+esp_sleep_wakeup_cause_t wakeup_reason;
 
 void setup() {
   ++bootCount;
@@ -25,16 +22,20 @@ void setup() {
   while (!Serial) {
   }; // wait for serial
   Serial.println("Boot number: " + String(bootCount));
-  print_wakeup_reason();
+
+  wakeup_reason = esp_sleep_get_wakeup_cause();
+  print_wakeup_reason(wakeup_reason);
+  configureWakeupSources();
+
   preferences.begin("loranet", false);
   if (preferences.isKey("sensorID")) {
     sensorID = preferences.getString("sensorID", "");
   } else {
     sensorID = "default";
   }
-  // Disable Wifi and Bluetooth for Battery savings
-  WiFi.mode(WIFI_OFF);
-  btStop();
+
+  disableWifiBluetooth();
+
   if (!bme.begin(BME280_ADD, &Wire1)) {
     Serial.println("Could not find a valid BME280 sensor, check wiring!");
   } else {
@@ -42,13 +43,12 @@ void setup() {
     bme.setSampling(bme.MODE_FORCED, bme.SAMPLING_X2, bme.SAMPLING_X2,
                     bme.SAMPLING_X2, bme.FILTER_OFF, bme.STANDBY_MS_500);
   }
-  configureWakeupSources();
 }
 
 void loop() {
-  displayInit();
   initLoRa(BAND, true);
   DynamicJsonDocument doc(128);
+
   // Get measurements
   bme.takeForcedMeasurement();
   measurements values(bme.readTemperature(), bme.readHumidity(),
@@ -75,9 +75,13 @@ void loop() {
 
   // Display the data
   // displayMeasurements(values);
-  displayMeasurements(values);
+  if (wakeup_reason == ESP_SLEEP_WAKEUP_EXT0) {
+    displayInit();
+    displayMeasurements(values);
+    delay(5000);
+  }
+
   Serial.println("Going to sleep now");
-  delay(1000);
   Serial.flush();
   esp_deep_sleep_start();
   delay(SLEEP_TIME);
