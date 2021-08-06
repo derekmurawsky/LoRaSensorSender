@@ -1,3 +1,8 @@
+/**
+ * @file main.cpp
+ * @brief Lora Sensor Sender
+ * This simple app pulls data from a BME280 sensor and sends it via LoRa
+ */
 #include "Adafruit_BME280.h"
 #include "Adafruit_Sensor.h"
 #include "ArduinoJson.h"
@@ -9,6 +14,7 @@
 #include "lorahelpers.h"
 #include "screen.h"
 
+// Globals
 Preferences preferences;
 String sensorID;
 Adafruit_BME280 bme;
@@ -23,10 +29,12 @@ void setup() {
   }; // wait for serial
   Serial.println("Boot number: " + String(bootCount));
 
+  // Why did we wake up? What makes us want to wake up?
   wakeup_reason = esp_sleep_get_wakeup_cause();
   print_wakeup_reason(wakeup_reason);
   configureWakeupSources();
 
+  // Check if there's a configured sensor ID. If not, use "default"
   preferences.begin("loranet", false);
   if (preferences.isKey("sensorID")) {
     sensorID = preferences.getString("sensorID", "");
@@ -49,12 +57,13 @@ void loop() {
   initLoRa(BAND, true);
   DynamicJsonDocument doc(128);
 
-  // Get measurements
+  // Since we are in bme.MODE_FORCED, we have to tell the sensor to take a
+  // reading. We then store the results in a measurment.
   bme.takeForcedMeasurement();
   measurements values(bme.readTemperature(), bme.readHumidity(),
                       bme.readPressure());
 
-  // Build packet data
+  // Build packet data in json
   doc["SID"] = sensorID;
   doc["BC"] = bootCount;
   doc["T"] = round_up(values.temperature, 2);
@@ -73,16 +82,14 @@ void loop() {
   serializeJson(doc, Serial);
   Serial.println();
 
-  // Display the data
-  // displayMeasurements(values);
+  // If we woke up from a button press, that means we want to see the data!
   if (wakeup_reason == ESP_SLEEP_WAKEUP_EXT0) {
     displayInit();
     displayMeasurements(values);
-    delay(5000);
+    delay(5000); // Bah! Humbug! Get rid of this!
   }
 
-  Serial.println("Going to sleep now");
+  Serial.println("Going to sleep now. Night Night...");
   Serial.flush();
   esp_deep_sleep_start();
-  delay(SLEEP_TIME);
 }

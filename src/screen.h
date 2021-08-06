@@ -1,10 +1,18 @@
+/**
+ * @file screen.h
+ * @brief Screen related helper functions
+ * Many bits of this code were pulled from the Heltec library
+ */
 #include "defines.h"
 #include "measurements.h"
 #include "oled/SSD1306Wire.h"
 
-SSD1306Wire *display;
+SSD1306Wire *display; /* The OLED display object */
 
-/* boarInit() replaces Heltec.h and allows for finer grained control
+/**
+ * @brief Powers up and initializes the OLED display
+ * This function powers up the display, flips it vertically, and sets the font
+ * (ArialMT, plain, 10pt)
  */
 void displayInit() {
   display =
@@ -14,14 +22,11 @@ void displayInit() {
   display->setFont(ArialMT_Plain_10);
   display->display();
 }
-
-void screenInit() {
-  display->init();
-  display->flipScreenVertically();
-  display->setFont(ArialMT_Plain_10);
-  display->display();
-}
-
+/**
+ * @brief Displays a measurement object on the screen
+ *
+ * @param M measurement object to display
+ */
 void displayMeasurements(measurements M) {
   display->clear();
   display->drawString(0, 0, String("Temperature: " + String(M.temperature)));
